@@ -1,13 +1,13 @@
 import requests, json
 
-def bearer_token (tenant_id, client_id, client_secret, scope):
+def bearer_token (tenant_id, client_id, secret, scope):
     # Construct the token endpoint URL
     token_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
 
     # Prepare the data for the POST request
     data = {
         'client_id': client_id,
-        'client_secret': client_secret,
+        'client_secret': secret,
         'scope': scope,
         'grant_type': 'client_credentials'
     }
