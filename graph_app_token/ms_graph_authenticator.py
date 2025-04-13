@@ -1,6 +1,6 @@
 import requests, json
 
-def graph_bearer_token (tenant_id, client_id, client_secret, scope):
+def bearer_token (tenant_id, client_id, client_secret, scope):
     # Construct the token endpoint URL
     token_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
 
