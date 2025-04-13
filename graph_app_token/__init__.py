@@ -1,1 +1,1 @@
-from .ms_graph_authenticator import graph_bearer_token
+from .graph_auth import bearer_token
