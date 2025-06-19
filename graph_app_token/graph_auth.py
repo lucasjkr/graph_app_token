@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, logging
 
 def bearer_token (tenant_id, client_id, secret, scope):
     # Construct the token endpoint URL
@@ -24,6 +24,6 @@ def bearer_token (tenant_id, client_id, secret, scope):
         token = response.json().get('access_token')
         return f'Bearer {token}'
     else:
-        print(f'Failed to obtain token: {response.status_code}')
-        print(response.json())
-        exit()
+        error_details = response.json()
+        logging.critical(f"Failed to obtain token: {response.status_code} - {error_details}")
+        raise RuntimeError(f"Token request failed with status {response.status_code}: {error_details}")
