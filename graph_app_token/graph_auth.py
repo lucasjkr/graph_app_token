@@ -32,6 +32,8 @@ def get_bearer_token(tenant_id: str, client_id: str, secret: str, scope: str) ->
         response = requests.post(token_url, data=data, headers=headers, timeout=10)
         if response.status_code == 200:
             token = response.json().get('access_token')
+            if not token:
+                raise RuntimeError("Token not found in the response.")
             return f'Bearer {token}'
         else:
             error_details = response.json()
