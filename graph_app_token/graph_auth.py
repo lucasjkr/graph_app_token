@@ -34,7 +34,7 @@ def get_bearer_token(tenant_id: str, client_id: str, secret: str, scope: str) ->
             token = response.json().get('access_token')
             if not token:
                 raise RuntimeError("Token not found in the response.")
-            return f'Bearer {token}'
+            return token
         else:
             error_details = response.json()
             logging.critical(f"Failed to obtain token: {response.status_code} - {error_details}")
