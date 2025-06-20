@@ -1,1 +1,1 @@
-from .graph_auth import bearer_token
+from .graph_auth import get_bearer_token
