@@ -3,8 +3,8 @@ import requests, logging
 def get_bearer_token(
     tenant_id: str,
     client_id: str,
-    secret: str,
-    scope: str,
+    client_secret: str,
+    scope: str = "https://graph.microsoft.com/.default", # default scope
     mode: str = "bearer"  # 'bearer', 'token', or 'raw'
 ) -> str | dict:
     """
@@ -13,7 +13,7 @@ def get_bearer_token(
     Args:
         tenant_id (str): Azure AD tenant ID.
         client_id (str): Application (client) ID.
-        secret (str): Client secret.
+        client_secret (str): Client secret.
         scope (str): Scope for the token request.
         mode (str): Output mode - 'bearer' for "Bearer {token}", 'token' for just token, 'raw' for full response.
 
@@ -26,7 +26,7 @@ def get_bearer_token(
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     data = {
         'client_id': client_id,
-        'client_secret': secret,
+        'client_secret': client_secret,
         'scope': scope,
         'grant_type': 'client_credentials'
     }
