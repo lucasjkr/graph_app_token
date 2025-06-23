@@ -1,5 +1,6 @@
 import requests, logging
 import time
+import json
 import hashlib
 
 # In-memory token cache
@@ -14,7 +15,7 @@ def get_bearer_token(
     client_id: str,
     client_secret: str,
     scope: str = "https://graph.microsoft.com/.default",  # default scope
-    mode: str = "bearer"  # 'bearer', 'token', or 'raw'
+    mode: str = "token"  # 'token', or 'raw'
 ) -> str:
     """
     Retrieves a bearer token from Microsoft identity platform using client credentials.
@@ -23,7 +24,7 @@ def get_bearer_token(
         client_id (str): Application (client) ID.
         client_secret (str): Client secret.
         scope (str): Scope for the token request.
-        mode (str): Output mode - 'bearer' for "Bearer {token}", 'token' for just token, 'raw' for full response.
+        mode (str): Output mode - 'token' for just token, 'raw' for full response.
     Returns:
         str or dict: Token string or raw JSON response depending on mode.
     Raises:
@@ -41,7 +42,10 @@ def get_bearer_token(
         'scope': scope,
         'grant_type': 'client_credentials'
     }
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
     try:
         response = requests.post(token_url, data=data, headers=headers, timeout=10)
         try:
@@ -49,6 +53,7 @@ def get_bearer_token(
         except ValueError:
             logging.critical("Non-JSON response received.")
             raise RuntimeError("Invalid JSON response received.")
+
         if response.status_code == 200:
             logging.info("Successfully obtained access token.")
             token = response_json.get('access_token')
@@ -57,20 +62,19 @@ def get_bearer_token(
                 raise RuntimeError("Token not found in the response.")
             expires_in = response_json.get('expires_in', 3599)
             _token_cache[cache_key] = {
-                'token': f"Bearer {token}" if mode == "bearer" else token if mode == "token" else response_json,
+                'token': f"{token}" if mode == "token" else response_json,
                 'expires_at': time.time() + expires_in - 60
             }
-            if mode == "bearer":
-                return f"Bearer {token}"
-            elif mode == "token":
+            if mode == "token":
                 return token
             elif mode == "raw":
                 return response_json
             else:
-                raise ValueError(f"Invalid mode '{mode}'. Use 'bearer', 'token', or 'raw'.")
+                raise ValueError(f"Invalid mode '{mode}'. Use 'token', or 'raw'.")
         else:
-            logging.critical(f"Token request failed: {response.status_code} - {response_json}")
-            raise RuntimeError(f"Token request failed: {response.status_code} - {response_json}")
+            logging.critical(f"Token request failed: https status code {response.status_code} - {response_json}")
+            raise RuntimeError(f"Token request failed, received https status code {response.status_code}\n{json.dumps(response_json, indent=4)}")
+
     except requests.exceptions.Timeout:
         logging.critical("Token request timed out.")
         raise RuntimeError("Token request timed out.")
