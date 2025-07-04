@@ -18,22 +18,34 @@ def get_bearer_token(
     mode: str = "token"  # 'token', or 'raw'
 ) -> str:
     """
-    Retrieves a bearer token from Microsoft identity platform using client credentials.
+    Fetches a bearer token from Microsoft Identity Platform using client credentials.
+
+    This function uses an in-memory cache to avoid redundant token requests. It supports
+    returning either the raw response or just the access token string.
+
     Args:
         tenant_id (str): Azure AD tenant ID.
         client_id (str): Application (client) ID.
-        client_secret (str): Client secret.
-        scope (str): Scope for the token request.
-        mode (str): Output mode - 'token' for just token, 'raw' for full response.
+        client_secret (str): Application secret.
+        scope (str, optional): OAuth2 scope. Defaults to "https://graph.microsoft.com/.default".
+        mode (str, optional): Output mode - "token" for access token only, "raw" for full response.
+
     Returns:
-        str or dict: Token string or raw JSON response depending on mode.
+        str or dict: Access token string or full JSON response, depending on mode.
+
     Raises:
-        RuntimeError: If the token request fails, times out, or is malformed.
+        ValueError: If an invalid mode is provided.
+        TokenRequestError: If the token request fails or returns a non-200 response.
+        RuntimeError: If the response is not valid JSON or if the request times out.
     """
+    logging.debug(f"get_bearer_token called for tenant_id={tenant_id[:5]}..., client_id={client_id[:5]}...")
+
     cache_key = _generate_cache_key(tenant_id, client_id, client_secret, scope)
     cached = _token_cache.get(cache_key)
     if cached and cached['expires_at'] > time.time():
+        logging.debug(f"Retrieved cached token: {cache_key}")
         return cached['token']
+    logging.debug(f"No valid cached token found for key: {cache_key}")
 
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     data = {
@@ -65,16 +77,24 @@ def get_bearer_token(
                 'token': f"{token}" if mode == "token" else response_json,
                 'expires_at': time.time() + expires_in - 60
             }
+            logging.debug(f"Token cached with expiry at {time.ctime(_token_cache[cache_key]['expires_at'])}")
+
+            logging.debug(f"Returning token in mode: {mode}")
             if mode == "token":
                 return token
             elif mode == "raw":
                 return response_json
             else:
                 raise ValueError(f"Invalid mode '{mode}'. Use 'token', or 'raw'.")
-        else:
-            logging.critical(f"Token request failed: https status code {response.status_code} - {response_json}")
-            raise RuntimeError(f"Token request failed, received https status code {response.status_code}\n{json.dumps(response_json, indent=4)}")
+
+        error_dump = dict( { 'http_status_code': response.status_code }, **response_json )
+        logging.critical(json.dumps(error_dump))
+        raise TokenRequestError(json.dumps(error_dump, indent=4))
 
     except requests.exceptions.Timeout:
         logging.critical("Token request timed out.")
         raise RuntimeError("Token request timed out.")
+
+class TokenRequestError(Exception):
+    """Base class for token request errors."""
+    pass
