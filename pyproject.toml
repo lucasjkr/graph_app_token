@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graph_app_token"
-version = "0.2.0"
+version = "0.2.1"
 description = "A Python package for Microsoft Graph API token authentication"
 authors = [
     { name="lucasjkr" }
