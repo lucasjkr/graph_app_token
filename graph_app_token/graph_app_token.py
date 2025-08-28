@@ -67,7 +67,6 @@ def get_bearer_token(
             raise RuntimeError("Invalid JSON response received when retrieving Microsoft Graph token.")
 
         if response.status_code == 200:
-            logging.debug(f"Obtained Microsoft Graph bearer token with expiry at {time.ctime(_token_cache[cache_key]['expires_at'])}.")
             token = response_json.get('access_token')
             if not token:
                 logging.critical("Microsoft Graph token not found in the response.")
@@ -77,9 +76,13 @@ def get_bearer_token(
                 'token': f"{token}" if mode == "token" else response_json,
                 'expires_at': time.time() + expires_in - 60
             }
-            logging.debug(f"Microsoft Graph token cached with expiry at {time.ctime(_token_cache[cache_key]['expires_at'])}")
-
+            logging.debug(
+                f"Obtained Microsoft Graph bearer token with expiry at {time.ctime(_token_cache[cache_key]['expires_at'])}.")
+            logging.debug(
+                f"Microsoft Graph token cached with expiry at {time.ctime(_token_cache[cache_key]['expires_at'])}")
             logging.debug(f"Returning Microsoft Graph bearer token in mode: {mode}")
+
+
             if mode == "token":
                 return token
             elif mode == "raw":
